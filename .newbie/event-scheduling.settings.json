@@ -4,7 +4,7 @@
     "eventScheduling": {"minutesOfTimeslotUnit": 5}
   },
   "dependencies": {
-    "@nestjs/bull": "^10.0.1",
+    "@nestjs/bull": "latest",
     "bull": "^4.11.5",
     "cron-parser": "^4.9.0",
     "lodash": "^4.17.21"
