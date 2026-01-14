@@ -1,10 +1,7 @@
 import {Injectable} from '@nestjs/common';
-import {Prisma} from '@prisma/client';
+import {Prisma} from '@generated/prisma/client';
 import {AvailabilityService} from '@microservices/event-scheduling/availability.service';
-import {
-  ceilByMinutes,
-  floorByMinutes,
-} from '@framework/utilities/datetime.util';
+import {ceilByMinutes, floorByMinutes} from '@framework/utilities/datetime.util';
 import {PrismaService} from '@framework/prisma/prisma.service';
 
 const ROLE_NAME_EVENT_HOST = 'Event Host';
@@ -24,8 +21,7 @@ export class EventHostService {
     private readonly prisma: PrismaService,
     private readonly availabilityService: AvailabilityService
   ) {
-    this.MINUTES_Of_TIMESLOT_UNIT =
-      this.availabilityService.MINUTES_Of_TIMESLOT_UNIT;
+    this.MINUTES_Of_TIMESLOT_UNIT = this.availabilityService.MINUTES_Of_TIMESLOT_UNIT;
   }
 
   async getSortedCoachesWithQuotaLimit(event: {
@@ -38,11 +34,7 @@ export class EventHostService {
     weekOfMonth: number;
     minutesOfDuration: number;
   }) {
-    type UserResult = Prisma.Result<
-      typeof this.prisma.eventHost,
-      {select: typeof userSelectArgs},
-      'findUniqueOrThrow'
-    >;
+    type UserResult = Prisma.Result<typeof this.prisma.eventHost, {select: typeof userSelectArgs}, 'findUniqueOrThrow'>;
 
     // [step 1] Get coaches for the specific venue.
     const coaches = await this.prisma.eventHost.findMany({
@@ -61,14 +53,8 @@ export class EventHostService {
     const availableCoaches: UserResult[] = [];
 
     // [step 2-1] Get availabilities.
-    const newDatetimeOfStart = floorByMinutes(
-      event.datetimeOfStart,
-      this.MINUTES_Of_TIMESLOT_UNIT
-    );
-    const newDatetimeOfEnd = ceilByMinutes(
-      event.datetimeOfEnd,
-      this.MINUTES_Of_TIMESLOT_UNIT
-    );
+    const newDatetimeOfStart = floorByMinutes(event.datetimeOfStart, this.MINUTES_Of_TIMESLOT_UNIT);
+    const newDatetimeOfEnd = ceilByMinutes(event.datetimeOfEnd, this.MINUTES_Of_TIMESLOT_UNIT);
     const availabilities = await this.prisma.availabilityTimeslot.findMany({
       where: {
         hostId: {in: coachIds},
@@ -94,10 +80,7 @@ export class EventHostService {
       const availabilitiesOfOneCoach = availabilities.filter(availability => {
         return availability.hostId === coach.id;
       });
-      if (
-        availabilitiesOfOneCoach.length >=
-        event.minutesOfDuration / this.MINUTES_Of_TIMESLOT_UNIT
-      ) {
+      if (availabilitiesOfOneCoach.length >= event.minutesOfDuration / this.MINUTES_Of_TIMESLOT_UNIT) {
         // Count coach's events in all locations.
         const countOfEvents = await this.prisma.event.count({
           where: {
@@ -114,10 +97,8 @@ export class EventHostService {
           sortedAvailableCoaches.push({
             hostId: coach.id,
             remainingQuota: coach['profile']?.quotaOfWeekMin! - countOfEvents,
-            remainingQuotaOfMin:
-              coach['profile']?.quotaOfWeekMin! - countOfEvents,
-            remainingQuotaOfMax:
-              coach['profile']?.quotaOfWeekMax! - countOfEvents,
+            remainingQuotaOfMin: coach['profile']?.quotaOfWeekMin! - countOfEvents,
+            remainingQuotaOfMax: coach['profile']?.quotaOfWeekMax! - countOfEvents,
             quotaOfWeek: coach['profile']?.quotaOfWeekMin!,
             quotaOfWeekMin: coach['profile']?.quotaOfWeekMin!,
             quotaOfWeekMax: coach['profile']?.quotaOfWeekMax!,
@@ -133,30 +114,21 @@ export class EventHostService {
     // [step 3] Sort available coaches by quota.
     sortedAvailableCoaches.sort((a, b) => {
       if (a.remainingQuota > 0 && b.remainingQuota > 0) {
-        if (
-          a.remainingQuota / a.quotaOfWeek >=
-          b.remainingQuota / b.quotaOfWeek
-        ) {
+        if (a.remainingQuota / a.quotaOfWeek >= b.remainingQuota / b.quotaOfWeek) {
           return -1; // a is in front of b
         } else {
           return 1; // b is in front of a
         }
       } else if (a.remainingQuota <= 0 && b.remainingQuota <= 0) {
         if (a.remainingQuotaOfMin > 0 && b.remainingQuotaOfMin > 0) {
-          if (
-            a.remainingQuotaOfMin / a.quotaOfWeekMin >=
-            b.remainingQuotaOfMin / b.quotaOfWeekMin
-          ) {
+          if (a.remainingQuotaOfMin / a.quotaOfWeekMin >= b.remainingQuotaOfMin / b.quotaOfWeekMin) {
             return -1;
           } else {
             return 1;
           }
         } else if (a.remainingQuotaOfMin <= 0 && b.remainingQuotaOfMin <= 0) {
           // ! The remainingQuotaOfMax must be larger than 0.
-          if (
-            a.remainingQuotaOfMax / a.quotaOfWeekMax >=
-            b.remainingQuotaOfMax / b.quotaOfWeekMax
-          ) {
+          if (a.remainingQuotaOfMax / a.quotaOfWeekMax >= b.remainingQuotaOfMax / b.quotaOfWeekMax) {
             return -1;
           } else {
             return 1;
@@ -211,14 +183,8 @@ export class EventHostService {
     });
 
     // [step 2] Get availabilities.
-    const newDatetimeOfStart = floorByMinutes(
-      event.datetimeOfStart,
-      this.MINUTES_Of_TIMESLOT_UNIT
-    );
-    const newDatetimeOfEnd = ceilByMinutes(
-      event.datetimeOfEnd,
-      this.MINUTES_Of_TIMESLOT_UNIT
-    );
+    const newDatetimeOfStart = floorByMinutes(event.datetimeOfStart, this.MINUTES_Of_TIMESLOT_UNIT);
+    const newDatetimeOfEnd = ceilByMinutes(event.datetimeOfEnd, this.MINUTES_Of_TIMESLOT_UNIT);
     const availabilities = await this.prisma.availabilityTimeslot.findMany({
       where: {
         hostId: {in: coachIds},
@@ -237,10 +203,7 @@ export class EventHostService {
       const availabilitiesOfOneCoach = availabilities.filter(availability => {
         return availability.hostId === coach.id;
       });
-      if (
-        availabilitiesOfOneCoach.length >=
-        event.minutesOfDuration / this.MINUTES_Of_TIMESLOT_UNIT
-      ) {
+      if (availabilitiesOfOneCoach.length >= event.minutesOfDuration / this.MINUTES_Of_TIMESLOT_UNIT) {
         coach['isAvailable'] = true;
       } else {
         coach['isAvailable'] = false;
@@ -273,33 +236,21 @@ export class EventHostService {
       const a = coachA;
       const b = coachB;
       if (a['remainingQuota'] > 0 && b['remainingQuota'] > 0) {
-        if (
-          a['remainingQuota'] / a.quotaOfWeekMin! >=
-          b['remainingQuota'] / b.quotaOfWeekMin!
-        ) {
+        if (a['remainingQuota'] / a.quotaOfWeekMin! >= b['remainingQuota'] / b.quotaOfWeekMin!) {
           return -1; // a is in front of b
         } else {
           return 1; // b is in front of a
         }
       } else if (a['remainingQuota'] <= 0 && b['remainingQuota'] <= 0) {
         if (a['remainingQuotaOfMin'] > 0 && b['remainingQuotaOfMin'] > 0) {
-          if (
-            a['remainingQuotaOfMin'] / a.quotaOfWeekMin! >=
-            b['remainingQuotaOfMin'] / b.quotaOfWeekMin!
-          ) {
+          if (a['remainingQuotaOfMin'] / a.quotaOfWeekMin! >= b['remainingQuotaOfMin'] / b.quotaOfWeekMin!) {
             return -1;
           } else {
             return 1;
           }
-        } else if (
-          a['remainingQuotaOfMin'] <= 0 &&
-          b['remainingQuotaOfMin'] <= 0
-        ) {
+        } else if (a['remainingQuotaOfMin'] <= 0 && b['remainingQuotaOfMin'] <= 0) {
           // ! The remainingQuotaOfMax must be larger than 0.
-          if (
-            a['remainingQuotaOfMax'] / a.quotaOfWeekMax! >=
-            b['remainingQuotaOfMax'] / b.quotaOfWeekMax!
-          ) {
+          if (a['remainingQuotaOfMax'] / a.quotaOfWeekMax! >= b['remainingQuotaOfMax'] / b.quotaOfWeekMax!) {
             return -1;
           } else {
             return 1;

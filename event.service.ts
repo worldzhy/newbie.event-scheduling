@@ -1,19 +1,8 @@
 import {Injectable} from '@nestjs/common';
-import {
-  Prisma,
-  Event,
-  EventChangeLogType,
-  EventIssueStatus,
-  EventStatus,
-} from '@prisma/client';
+import {Event, EventChangeLogType, EventIssueStatus, EventStatus, Prisma} from '@generated/prisma/client';
 import {PrismaService} from '@framework/prisma/prisma.service';
-import {
-  constructDateTime,
-  daysOfMonth,
-} from '@framework/utilities/datetime.util';
-import * as _ from 'lodash';
+import {constructDateTime, daysOfMonth} from '@framework/utilities/datetime.util';
 import {EventIssueService} from './event-issue.service';
-import {eventPrismaMiddleware} from './event.prisma.middleware';
 
 @Injectable()
 export class EventService {
@@ -21,7 +10,7 @@ export class EventService {
     private readonly prisma: PrismaService,
     private readonly eventIssueService: EventIssueService
   ) {
-    this.prisma.$use(eventPrismaMiddleware);
+    // this.prisma.$use(eventPrismaMiddleware);
   }
 
   copyMany(params: {
@@ -37,14 +26,8 @@ export class EventService {
       week: number; // The number of week in a month, 1~6.
     };
   }) {
-    const calendarOfSourceContainer = daysOfMonth(
-      params.from.year,
-      params.from.month
-    );
-    const calendarOfTargetContainer = daysOfMonth(
-      params.to.year,
-      params.to.month
-    );
+    const calendarOfSourceContainer = daysOfMonth(params.from.year, params.from.month);
+    const calendarOfTargetContainer = daysOfMonth(params.to.year, params.to.month);
     const daysOfSourceWeek = calendarOfSourceContainer[params.from.week - 1];
     const daysOfTargetWeek = calendarOfTargetContainer[params.to.week - 1];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -98,10 +81,7 @@ export class EventService {
   }
   /* End */
 
-  async updateEvent(
-    eventId: number,
-    body: Prisma.EventUncheckedUpdateInput & {needToDuplicate?: boolean}
-  ) {
+  async updateEvent(eventId: number, body: Prisma.EventUncheckedUpdateInput & {needToDuplicate?: boolean}) {
     const oldEvent = await this.prisma.event.findUniqueOrThrow({
       where: {id: eventId},
     });
@@ -143,11 +123,7 @@ export class EventService {
     await this.prisma.eventChangeLog.create({
       data: {
         type: EventChangeLogType.USER,
-        description:
-          'Update class: ' +
-          newEvent['type'].name +
-          ' at ' +
-          newEvent.datetimeOfStart,
+        description: 'Update class: ' + newEvent['type'].name + ' at ' + newEvent.datetimeOfStart,
         eventContainerId: newEvent.containerId,
         eventId: eventId,
       },
@@ -197,11 +173,7 @@ export class EventService {
       await this.prisma.eventChangeLog.create({
         data: {
           type: EventChangeLogType.USER,
-          description:
-            'Update class: ' +
-            newEvent['type'].name +
-            ' at ' +
-            newOtherEvent.datetimeOfStart,
+          description: 'Update class: ' + newEvent['type'].name + ' at ' + newOtherEvent.datetimeOfStart,
           eventContainerId: newOtherEvent.containerId,
           eventId: newOtherEvent.id,
         },

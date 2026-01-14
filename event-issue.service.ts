@@ -1,21 +1,8 @@
 import {Injectable} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
-import {
-  Prisma,
-  EventIssueType,
-  Event,
-  EventIssueStatus,
-  EventStatus,
-  EventHost,
-} from '@prisma/client';
+import {Event, EventHost, EventIssueStatus, EventIssueType, EventStatus, Prisma} from '@generated/prisma/client';
 import {PrismaService} from '@framework/prisma/prisma.service';
-import {
-  ceilByMinutes,
-  dateMinusMinutes,
-  datePlusMinutes,
-  floorByMinutes,
-} from '@framework/utilities/datetime.util';
-import * as _ from 'lodash';
+import {ceilByMinutes, dateMinusMinutes, datePlusMinutes, floorByMinutes} from '@framework/utilities/datetime.util';
 
 enum EventIssueDescription {
   Error_CoachNotExisted = 'The coach is not existed.',
@@ -99,14 +86,8 @@ export class EventIssueService {
       }
 
       // [step 2-5] Check availability
-      const newDatetimeOfStart = floorByMinutes(
-        event.datetimeOfStart,
-        this.MINUTES_Of_TIMESLOT_UNIT
-      );
-      const newDatetimeOfEnd = ceilByMinutes(
-        event.datetimeOfEnd,
-        this.MINUTES_Of_TIMESLOT_UNIT
-      );
+      const newDatetimeOfStart = floorByMinutes(event.datetimeOfStart, this.MINUTES_Of_TIMESLOT_UNIT);
+      const newDatetimeOfEnd = ceilByMinutes(event.datetimeOfEnd, this.MINUTES_Of_TIMESLOT_UNIT);
 
       const count = await this.prisma.availabilityTimeslot.count({
         where: {
@@ -130,16 +111,10 @@ export class EventIssueService {
           hostId: eventHost.id,
           venueId: {not: event.venueId},
           datetimeOfStart: {
-            lt: datePlusMinutes(
-              event.datetimeOfEnd,
-              MINUTES_OF_CONFLICT_DISTANCE
-            ),
+            lt: datePlusMinutes(event.datetimeOfEnd, MINUTES_OF_CONFLICT_DISTANCE),
           },
           datetimeOfEnd: {
-            gt: dateMinusMinutes(
-              event.datetimeOfStart,
-              MINUTES_OF_CONFLICT_DISTANCE
-            ),
+            gt: dateMinusMinutes(event.datetimeOfStart, MINUTES_OF_CONFLICT_DISTANCE),
           },
           deletedAt: null,
         },
@@ -153,8 +128,7 @@ export class EventIssueService {
           .toString();
         issueCreateManyInput.push({
           type: EventIssueType.ERROR_CONFLICTING_EVENT_TIME,
-          description:
-            EventIssueDescription.Error_TimeConflict + '(' + stringVenues + ')',
+          description: EventIssueDescription.Error_TimeConflict + '(' + stringVenues + ')',
           eventId: event.id,
         });
       }

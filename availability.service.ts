@@ -1,6 +1,6 @@
 import {Injectable} from '@nestjs/common';
 import {ConfigService} from '@nestjs/config';
-import {Event, AvailabilityTimeslotStatus, Prisma} from '@prisma/client';
+import {AvailabilityTimeslotStatus, Event, Prisma} from '@generated/prisma/client';
 import {PrismaService} from '@framework/prisma/prisma.service';
 import {
   ceilByMinutes,
@@ -25,10 +25,9 @@ export class AvailabilityService {
   }
 
   async parseAvailabilityExpression(id: number) {
-    const expression =
-      await this.prisma.availabilityExpression.findUniqueOrThrow({
-        where: {id},
-      });
+    const expression = await this.prisma.availabilityExpression.findUniqueOrThrow({
+      where: {id},
+    });
 
     // [step 1] Construct cron parser options.
     let timeZone: string | null = null;
@@ -51,14 +50,9 @@ export class AvailabilityService {
     };
 
     // [step 2] Parse availability expressions and collect availability timeslots.
-    let availabilityTimeslots: Prisma.AvailabilityTimeslotUncheckedUpdateInput[] =
-      [];
+    let availabilityTimeslots: Prisma.AvailabilityTimeslotUncheckedUpdateInput[] = [];
 
-    for (
-      let i = 0;
-      i < expression.cronExpressionsOfAvailableTimePoints.length;
-      i++
-    ) {
+    for (let i = 0; i < expression.cronExpressionsOfAvailableTimePoints.length; i++) {
       const exp = expression.cronExpressionsOfAvailableTimePoints[i];
       availabilityTimeslots = availabilityTimeslots.concat(
         this.parseCronExpression({
@@ -70,14 +64,9 @@ export class AvailabilityService {
     }
 
     // [step 3] Parse unavailability expressions and collect unavailability timeslots.
-    let unavailabilityTimeslots: Prisma.AvailabilityTimeslotUncheckedUpdateInput[] =
-      [];
+    let unavailabilityTimeslots: Prisma.AvailabilityTimeslotUncheckedUpdateInput[] = [];
 
-    for (
-      let j = 0;
-      j < expression.cronExpressionsOfUnavailableTimePoints.length;
-      j++
-    ) {
+    for (let j = 0; j < expression.cronExpressionsOfUnavailableTimePoints.length; j++) {
       const exp = expression.cronExpressionsOfUnavailableTimePoints[j];
       unavailabilityTimeslots = unavailabilityTimeslots.concat(
         this.parseCronExpression({
@@ -89,18 +78,15 @@ export class AvailabilityService {
     }
 
     // [step 4] Collect final availability timeslots.
-    const finalAvailabilityTimeslots: Prisma.AvailabilityTimeslotUncheckedUpdateInput[] =
-      [];
+    const finalAvailabilityTimeslots: Prisma.AvailabilityTimeslotUncheckedUpdateInput[] = [];
     for (let m = 0; m < availabilityTimeslots.length; m++) {
       const availabilityTimeslot = availabilityTimeslots[m];
       let matched = false;
       for (let n = 0; n < unavailabilityTimeslots.length; n++) {
         const unavailabilityTimeslot = unavailabilityTimeslots[n];
         if (
-          availabilityTimeslot.datetimeOfStart!.toString() ===
-            unavailabilityTimeslot.datetimeOfStart!.toString() &&
-          availabilityTimeslot.datetimeOfEnd!.toString() ===
-            unavailabilityTimeslot.datetimeOfEnd!.toString()
+          availabilityTimeslot.datetimeOfStart!.toString() === unavailabilityTimeslot.datetimeOfStart!.toString() &&
+          availabilityTimeslot.datetimeOfEnd!.toString() === unavailabilityTimeslot.datetimeOfEnd!.toString()
         ) {
           matched = true;
         }
@@ -169,9 +155,7 @@ export class AvailabilityService {
     };
 
     const interval = parser.parseExpression(
-      `0/${params.minutesOfTimeslot} ${params.hourOfOpening}-${
-        params.hourOfClosure - 1
-      } * * *`,
+      `0/${params.minutesOfTimeslot} ${params.hourOfOpening}-${params.hourOfClosure - 1} * * *`,
       cronParserOptions
     );
 
@@ -181,10 +165,7 @@ export class AvailabilityService {
 
       timeslots.push({
         datetimeOfStart: parsedDatetime,
-        datetimeOfEnd: datePlusMinutes(
-          parsedDatetime,
-          params.minutesOfTimeslot
-        ),
+        datetimeOfEnd: datePlusMinutes(parsedDatetime, params.minutesOfTimeslot),
         year: splitedDateTime.year,
         month: splitedDateTime.month,
         dayOfMonth: splitedDateTime.dayOfMonth,
@@ -207,14 +188,8 @@ export class AvailabilityService {
     }
 
     // The start time and end time should cover an integer number of timeslots.
-    const newDatetimeOfStart = floorByMinutes(
-      event.datetimeOfStart,
-      this.MINUTES_Of_TIMESLOT_UNIT
-    );
-    const newDatetimeOfEnd = ceilByMinutes(
-      event.datetimeOfEnd,
-      this.MINUTES_Of_TIMESLOT_UNIT
-    );
+    const newDatetimeOfStart = floorByMinutes(event.datetimeOfStart, this.MINUTES_Of_TIMESLOT_UNIT);
+    const newDatetimeOfEnd = ceilByMinutes(event.datetimeOfEnd, this.MINUTES_Of_TIMESLOT_UNIT);
 
     await this.prisma.availabilityTimeslot.updateMany({
       where: {
@@ -235,14 +210,8 @@ export class AvailabilityService {
     }
 
     // The start time and end time should cover an integer number of timeslots.
-    const newDatetimeOfStart = floorByMinutes(
-      event.datetimeOfStart,
-      this.MINUTES_Of_TIMESLOT_UNIT
-    );
-    const newDatetimeOfEnd = ceilByMinutes(
-      event.datetimeOfEnd,
-      this.MINUTES_Of_TIMESLOT_UNIT
-    );
+    const newDatetimeOfStart = floorByMinutes(event.datetimeOfStart, this.MINUTES_Of_TIMESLOT_UNIT);
+    const newDatetimeOfEnd = ceilByMinutes(event.datetimeOfEnd, this.MINUTES_Of_TIMESLOT_UNIT);
 
     await this.prisma.availabilityTimeslot.updateMany({
       where: {
@@ -254,33 +223,16 @@ export class AvailabilityService {
     });
   }
 
-  private parseCronExpression(args: {
-    cronExpression: string;
-    cronParserOptions: any;
-    minutesOfDuration: number;
-  }) {
+  private parseCronExpression(args: {cronExpression: string; cronParserOptions: any; minutesOfDuration: number}) {
     const timeslots: Prisma.AvailabilityTimeslotUncheckedUpdateInput[] = [];
     try {
-      const interval = CronParser.parseExpression(
-        args.cronExpression,
-        args.cronParserOptions
-      );
+      const interval = CronParser.parseExpression(args.cronExpression, args.cronParserOptions);
       while (interval.hasNext()) {
         const parsedDatetime = interval.next().value.toDate();
 
-        for (
-          let i = 0;
-          i < args.minutesOfDuration / this.MINUTES_Of_TIMESLOT_UNIT;
-          i++
-        ) {
-          const datetimeOfStart = datePlusMinutes(
-            parsedDatetime,
-            this.MINUTES_Of_TIMESLOT_UNIT * i
-          );
-          const datetimeOfEnd = datePlusMinutes(
-            datetimeOfStart,
-            this.MINUTES_Of_TIMESLOT_UNIT
-          );
+        for (let i = 0; i < args.minutesOfDuration / this.MINUTES_Of_TIMESLOT_UNIT; i++) {
+          const datetimeOfStart = datePlusMinutes(parsedDatetime, this.MINUTES_Of_TIMESLOT_UNIT * i);
+          const datetimeOfEnd = datePlusMinutes(datetimeOfStart, this.MINUTES_Of_TIMESLOT_UNIT);
 
           timeslots.push({
             datetimeOfStart: datetimeOfStart,
