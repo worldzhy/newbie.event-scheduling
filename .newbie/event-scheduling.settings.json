@@ -1,15 +1,14 @@
-
 {
   "config-service": {
     "eventScheduling": {"minutesOfTimeslotUnit": 5}
   },
   "dependencies": {
     "@nestjs/bull": "latest",
-    "bull": "^4.11.5",
-    "cron-parser": "^4.9.0",
-    "lodash": "^4.17.21"
+    "bull": "latest",
+    "cron-parser": "latest",
+    "lodash": "latest"
   },
   "devDependencies": {
-    "@types/lodash": "^4.14.202"
+    "@types/lodash": "latest"
   }
 }
